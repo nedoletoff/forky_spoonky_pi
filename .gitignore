@@ -13,11 +13,13 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Модели
+# Модели: все .pt скачиваются/обучаются локально и не коммитятся.
+# Для переноса обученной модели используй экспорт NCNN (scripts/export_ncnn.py).
 *.pt
-!yolo26n.pt
-!*.pt.keep
+*.onnx
 *_ncnn_model/
+*.torchscript
+*.mlpackage
 
 # ОС
 .DS_Store

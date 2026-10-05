@@ -60,7 +60,13 @@ if [[ ! -d "${APP_DIR}/.venv" ]]; then
   python3 -m venv "${APP_DIR}/.venv"
 fi
 "${APP_DIR}/.venv/bin/pip" install --upgrade pip wheel
+# CPU-only torch ОБЯЗАТЕЛЬНО до ultralytics: иначе pip тянет CUDA-колёса на гигабайты,
+# что не нужно для инференса на Pi (и часто не проходит по месту/сети).
+log "Ставлю CPU-only torch/torchvision…"
+"${APP_DIR}/.venv/bin/pip" install torch torchvision \
+  --index-url https://download.pytorch.org/whl/cpu
 "${APP_DIR}/.venv/bin/pip" install -r "${APP_DIR}/requirements-pi.txt"
+"${APP_DIR}/.venv/bin/pip" install -e "${APP_DIR}"
 
 # 4. .env из примера (не перезаписываем существующий — там могут быть секреты).
 if [[ ! -f "${APP_DIR}/.env" ]]; then

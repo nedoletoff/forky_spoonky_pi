@@ -12,6 +12,7 @@ WorkingDirectory=/opt/forky_spoonky_pi
 # Переменные окружения (порты, пути, секреты) — из .env, если файл есть.
 EnvironmentFile=-/opt/forky_spoonky_pi/.env
 Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/forky_spoonky_pi/src
 Environment=PATH=/opt/forky_spoonky_pi/.venv/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/opt/forky_spoonky_pi/.venv/bin/python -m forky_spoonky_pi
 Restart=on-failure
