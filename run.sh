@@ -17,4 +17,6 @@ if [[ ! -x "${VENV_PY}" ]]; then
 fi
 
 cd "${SOURCE_DIR}"
+# Фолбэк, если пакет не установлен editable: добавляем src в PYTHONPATH.
+export PYTHONPATH="${SOURCE_DIR}/src${PYTHONPATH:+:${PYTHONPATH}}"
 exec "${VENV_PY}" -m forky_spoonky_pi "$@"
