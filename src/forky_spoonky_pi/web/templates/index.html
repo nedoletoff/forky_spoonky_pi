@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Детектор приборов · YOLO на Raspberry Pi</title>
+<title>Forky &amp; Spoonky · Зоркий глаз на Raspberry Pi</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,15 +11,15 @@
     <header>
       <div class="logo">🎯</div>
       <div>
-        <h1>Детектор столовых приборов</h1>
+        <h1>Forky &amp; Spoonky</h1>
         <div class="subtitle">
-          <span>YOLO · реальное время</span>
+          <span>Нейросеть видит вилки и ложки</span>
           <span class="chip">🍓 Raspberry Pi 4 · 4 GB</span>
           <span class="chip blue">📷 USB-камера</span>
         </div>
       </div>
       <div class="status" id="status">
-        <span class="dot"></span><span id="status-text">Подключение…</span>
+        <span class="dot"></span><span id="status-text">Подключаюсь…</span>
       </div>
     </header>
 
@@ -34,7 +34,7 @@
             <div class="train-overlay-inner">
               <div class="train-title">
                 <span class="spinner"></span>
-                <span id="ov-title">Обучение модели…</span>
+                <span id="ov-title">Учим модель на лету…</span>
               </div>
               <div class="train-progress">
                 <div class="train-progress-bar" id="ov-bar"></div>
@@ -46,9 +46,9 @@
               </div>
               <canvas id="ov-chart" height="150"></canvas>
               <div class="train-overlay-legend">
-                <span><i style="background:#f59e0b"></i>box_loss</span>
-                <span><i style="background:#ef4444"></i>cls_loss</span>
-                <span><i style="background:#6366f1"></i>mAP50</span>
+                <span><i style="background:#ffb020"></i>box_loss</span>
+                <span><i style="background:#ff5470"></i>cls_loss</span>
+                <span><i style="background:#6d6bff"></i>mAP50</span>
               </div>
               <div class="train-overlay-log" id="ov-log"></div>
             </div>
@@ -58,7 +58,7 @@
 
       <aside>
         <div class="panel">
-          <h2>Статистика кадра</h2>
+          <h2>Что видит камера</h2>
           <div class="stat s-fork">
             <span class="swatch"></span><span class="name">Вилка</span>
             <span class="count" id="c-fork">0</span>
@@ -78,12 +78,12 @@
         </div>
 
         <div class="panel">
-          <h2>Управление</h2>
+          <h2>Ручное управление</h2>
           <div class="controls">
-            <button id="btn-snap" class="primary">📸 Снимок</button>
-            <button id="btn-resume" disabled>▶ Продолжить</button>
-            <button id="btn-redetect" disabled>🔁 Переобработать</button>
-            <button id="btn-download">⬇ Скачать кадр</button>
+            <button id="btn-snap" class="primary">📸 Поймать кадр</button>
+            <button id="btn-resume" disabled>▶ Вернуть поток</button>
+            <button id="btn-redetect" disabled>🔁 Пересчитать</button>
+            <button id="btn-download">⬇ Сохранить кадр</button>
           </div>
           <div class="slider-row" style="margin-top:16px;">
             <label>Порог уверенности <b id="thr-val">{{ '%.2f'|format(threshold) }}</b></label>
@@ -95,17 +95,17 @@
 
     <section class="section">
       <div class="section-head">
-        <h2>📸 Снимки</h2>
+        <h2>📸 Кадры в коллекцию</h2>
         <span class="count" id="snap-count">0</span>
         <div class="spacer"></div>
         <button class="tiny" id="btn-zip-clean">⬇ ZIP фото</button>
         <button class="tiny" id="btn-zip-annotated">⬇ ZIP с метками</button>
-        <button class="tiny" id="btn-reprocess-all">🔁 Прогнать все заново</button>
-        <button class="tiny primary" id="btn-export">📦 Экспорт датасета</button>
+        <button class="tiny" id="btn-reprocess-all">🔁 Пересчитать всё</button>
+        <button class="tiny primary" id="btn-export">📦 Забрать датасет</button>
       </div>
       <div class="gallery" id="gallery"></div>
       <div style="text-align:center; padding:24px; color:var(--muted); font-size:13px;" id="gallery-empty">
-        Снимков пока нет. Нажмите «📸 Снимок», чтобы сохранить текущий кадр.
+        Здесь пусто. Жми «📸 Поймать кадр» — и пополняй датасет.
       </div>
     </section>
 
@@ -149,8 +149,8 @@
         </div>
 
         <div class="controls" style="margin-top:14px; grid-template-columns:auto auto auto auto 1fr;">
-          <button class="primary" id="btn-train" {% if not training_enabled %}disabled{% endif %}>🚀 Начать обучение</button>
-          <button id="btn-train-stop" disabled>⏹ Остановить</button>
+          <button class="primary" id="btn-train" {% if not training_enabled %}disabled{% endif %}>🚀 Погнали учить</button>
+          <button id="btn-train-stop" disabled>⏹ Стоп</button>
           <button id="btn-train-log">📜 Показать лог</button>
           <button id="btn-promote" disabled>♻ Сделать рабочей</button>
           <button id="btn-export-ncnn" disabled>📦 Экспорт NCNN</button>
@@ -182,12 +182,12 @@
         <button class="tool active" data-tool="fork">🟩 Вилка</button>
         <button class="tool" data-tool="spoon">🟦 Ложка</button>
         <button class="tool" data-tool="delete">🗑 Удалить</button>
-        <span class="hint">Тяни мышью — новый бокс</span>
+        <span class="hint">Тяни мышью — рисуешь бокс</span>
       </div>
       <div class="editor-canvas-wrap" id="editor-wrap"></div>
       <div class="editor-footer">
-        <button id="editor-auto">🪄 Прогнать YOLO</button>
-        <button id="editor-clear">Очистить всё</button>
+        <button id="editor-auto">🪄 Пусть YOLO разметит</button>
+        <button id="editor-clear">Стереть всё</button>
         <div style="flex:1"></div>
         <button class="primary" id="editor-save">💾 Сохранить метки</button>
       </div>
