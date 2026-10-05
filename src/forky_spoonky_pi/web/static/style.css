@@ -16,6 +16,13 @@
   --ok:#e8eaed;
 }
 * { box-sizing:border-box; margin:0; padding:0; }
+.icon {
+  width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em;
+  fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  flex-shrink:0; pointer-events:none;
+}
+.icon.fill { fill:currentColor; stroke:none; }
+button .icon { width:1.1em; height:1.1em; }
 body {
   font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   background:var(--bg);
@@ -125,12 +132,12 @@ main { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:20px; align-
   display:flex; align-items:center; gap:12px; padding:12px 14px;
   border-radius:12px; background:var(--glass); border:1px solid var(--line); margin-bottom:10px;
 }
-.stat .swatch { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+.stat .stat-icon { width:18px; height:18px; flex-shrink:0; }
 .stat .name { font-size:14px; font-weight:500; }
 .stat .count { margin-left:auto; font-variant-numeric:tabular-nums; font-weight:800; font-size:19px; }
-.s-fork .swatch { background:var(--fork); }
-.s-spoon .swatch { background:var(--spoon); }
-.s-unknown .swatch { background:var(--unknown); }
+.s-fork .stat-icon { color:var(--fork); }
+.s-spoon .stat-icon { color:var(--spoon); }
+.s-unknown .stat-icon { color:var(--unknown); }
 .s-fork .count    { color:var(--fork); }
 .s-spoon .count   { color:var(--spoon); }
 .s-unknown .count { color:var(--unknown); }

@@ -1,11 +1,13 @@
 const el = id => document.getElementById(id);
+const SPRITE = document.body.dataset.sprite || '/static/icons.svg';
+const icon = (name, cls = '') => `<svg class="icon ${cls}"><use href="${SPRITE}#i-${name}"></use></svg>`;
 let isFrozen = false;
 let trainChart = null;
 let trainPollTimer = null;
 
-function toast(msg) {
+function toast(msg, iconName) {
   const t = el('toast');
-  t.textContent = msg;
+  t.innerHTML = (iconName ? icon(iconName) + ' ' : '') + msg;
   t.classList.add('show');
   clearTimeout(t._h);
   t._h = setTimeout(() => t.classList.remove('show'), 1800);
@@ -32,7 +34,7 @@ async function api(path, opts = {}) {
     const ct = r.headers.get('content-type') || '';
     return ct.includes('json') ? await r.json() : await r.text();
   } catch (e) {
-    toast('💥 Облом: ' + e.message);
+    toast('Ошибка: ' + e.message, 'alert');
     return null;
   }
 }
@@ -40,19 +42,19 @@ async function api(path, opts = {}) {
 // ---------- Live-контролы ----------
 el('btn-snap').onclick = async () => {
   const r = await api('/snapshot', { method: 'POST' });
-  if (r && r.ok) { setMode(true); toast('📸 Кадр в коллекции'); loadGallery(); }
+  if (r && r.ok) { setMode(true); toast('Кадр сохранён', 'camera'); loadGallery(); }
 };
 el('btn-resume').onclick = async () => {
   const r = await api('/resume', { method: 'POST' });
-  if (r && r.ok) { setMode(false); toast('▶ Поток ожил'); }
+  if (r && r.ok) { setMode(false); toast('Поток возобновлён', 'play'); }
 };
 el('btn-redetect').onclick = async () => {
-  toast('🔁 Считаю заново…');
+  toast('Повторный анализ…', 'refresh');
   const r = await api('/redetect', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ threshold: parseFloat(el('thr').value) }),
   });
-  if (r && r.ok) toast('✅ Готово за ' + r.infer_ms + ' мс');
+  if (r && r.ok) toast('Готово за ' + r.infer_ms + ' мс', 'check');
 };
 el('btn-download').onclick = () => { window.location = '/download'; };
 
@@ -99,19 +101,19 @@ async function loadGallery() {
       <div class="snap-thumb">
         <img src="/snapshots/${s.id}/thumb?t=${Date.now()}" loading="lazy" alt="">
         <span class="snap-badge ${s.labeled ? 'ok' : ''}">
-          ${s.labeled ? '✔ ' + s.labels_count : 'без меток'}
+          ${s.labeled ? icon('check') + ' ' + s.labels_count : 'без меток'}
         </span>
       </div>
       <div class="snap-meta">
         <div class="snap-time">${s.created_str}</div>
-        <div class="snap-det">🍴 ${s.fork} · 🥄 ${s.spoon} · ❓ ${s.unknown}</div>
+        <div class="snap-det">${icon('fork')} ${s.fork} · ${icon('spoon')} ${s.spoon} · ${icon('alert')} ${s.unknown}</div>
       </div>
       <div class="snap-actions">
-        <button data-act="view" title="Показать в потоке">👁</button>
-        <button data-act="label" title="Разметить вручную">✏️</button>
-        <button data-act="auto" title="Разметить YOLO">🪄</button>
-        <button data-act="dl" title="Скачать кадр">⬇</button>
-        <button data-act="del" title="Удалить">🗑</button>
+        <button data-act="view" title="Показать в потоке">${icon('eye')}</button>
+        <button data-act="label" title="Разметить вручную">${icon('edit')}</button>
+        <button data-act="auto" title="Разметить YOLO">${icon('wand')}</button>
+        <button data-act="dl" title="Скачать кадр">${icon('download')}</button>
+        <button data-act="del" title="Удалить">${icon('trash')}</button>
       </div>
     `;
     card.querySelector('[data-act="view"]').onclick = () => loadToView(s.id);
@@ -133,7 +135,7 @@ async function autoLabel(id) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ labels: r.labels }),
     });
-    if (save && save.ok) { toast('🪄 Разметил: ' + r.labels.length + ' боксов'); loadGallery(); }
+    if (save && save.ok) { toast('Разметка сохранена: ' + r.labels.length + ' боксов', 'wand'); loadGallery(); }
   }
 }
 
@@ -142,28 +144,28 @@ async function loadToView(id) {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ threshold: parseFloat(el('thr').value) }),
   });
-  if (r && r.ok) { setMode(true); toast('📌 Кадр приколот к потоку'); }
+  if (r && r.ok) { setMode(true); toast('Кадр загружен в поток', 'pin'); }
 }
 
 async function deleteSnap(id) {
-  if (!confirm('Стереть кадр ' + id + '?')) return;
+  if (!confirm('Удалить кадр ' + id + '?')) return;
   const r = await api('/snapshots/' + id, { method: 'DELETE' });
-  if (r && r.ok) { toast('🗑 Стерли'); loadGallery(); }
+  if (r && r.ok) { toast('Кадр удалён', 'trash'); loadGallery(); }
 }
 
 el('btn-reprocess-all').onclick = async () => {
-  if (!confirm('Пересчитать все кадры текущим порогом?')) return;
-  toast('🔁 Считаю заново…');
+  if (!confirm('Выполнить повторный анализ всех кадров с текущим порогом?')) return;
+  toast('Повторный анализ…', 'refresh');
   const r = await api('/snapshots/reprocess-all', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ threshold: parseFloat(el('thr').value) }),
   });
-  if (r && r.ok) { toast('✅ Готово: ' + r.processed + ' кадров'); loadGallery(); }
+  if (r && r.ok) { toast('Обработано кадров: ' + r.processed, 'check'); loadGallery(); }
 };
 
 el('btn-export').onclick = async () => {
   const r = await api('/dataset/export', { method: 'POST' });
-  if (r && r.ok) toast(`📦 Датасет собран: train ${r.train} / val ${r.val}`);
+  if (r && r.ok) toast(`Датасет сформирован: train ${r.train} / val ${r.val}`, 'package');
 };
 
 el('btn-zip-clean').onclick = () => { window.location = '/photos/zip?annotated=0'; };
@@ -334,12 +336,12 @@ el('editor-clear').onclick = () => { if (editor) { editor.boxes = []; drawEditor
 
 el('editor-auto').onclick = async () => {
   if (!editor) return;
-  toast('🪄 YOLO колдует…');
+  toast('Автоматическая разметка…', 'wand');
   const r = await api('/snapshots/' + editor.id + '/detect', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ threshold: parseFloat(el('thr').value) }),
   });
-  if (r && r.ok) { editor.boxes = r.labels; drawEditor(); toast('🪄 Нашёл боксов: ' + r.labels.length); }
+  if (r && r.ok) { editor.boxes = r.labels; drawEditor(); toast('Найдено боксов: ' + r.labels.length, 'wand'); }
 };
 
 el('editor-save').onclick = async () => {
@@ -349,7 +351,7 @@ el('editor-save').onclick = async () => {
     body: JSON.stringify({ labels: editor.boxes }),
   });
   if (r && r.ok) {
-    toast('💾 Метки в деле');
+    toast('Метки сохранены', 'save');
     el('editor-modal').hidden = true;
     editor = null;
     loadGallery();
@@ -429,14 +431,14 @@ async function refreshTrainStatus() {
 
   if (s.running) {
     el('btn-train').disabled = true;
-    el('btn-train').textContent = '⏳ Учится…';
+    el('btn-train').innerHTML = icon('refresh') + ' Обучение…';
     el('btn-train-stop').disabled = false;
     showTrainOverlay(true);
     const m = await api('/train/metrics');
     if (m) updateTrainOverlay(m);
   } else {
     el('btn-train').disabled = false;
-    el('btn-train').textContent = '🚀 Погнали учить';
+    el('btn-train').innerHTML = icon('rocket') + ' Запустить обучение';
     el('btn-train-stop').disabled = true;
     showTrainOverlay(false);
   }
@@ -467,13 +469,13 @@ el('btn-train').onclick = async () => {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (r && r.ok) { el('train-log').classList.add('show'); toast('🚀 Учёба пошла'); refreshTrainStatus(); }
+  if (r && r.ok) { el('train-log').classList.add('show'); toast('Обучение запущено', 'rocket'); refreshTrainStatus(); }
 };
 
 el('btn-train-stop').onclick = async () => {
-  if (!confirm('Стоп-кран: прервать обучение?')) return;
+  if (!confirm('Прервать обучение?')) return;
   const r = await api('/train/stop', { method: 'POST' });
-  if (r && r.ok) { toast('⏹ Учёба на паузе'); refreshTrainStatus(); }
+  if (r && r.ok) { toast('Обучение остановлено', 'square'); refreshTrainStatus(); }
 };
 
 el('btn-train-log').onclick = () => { el('train-log').classList.toggle('show'); };
@@ -485,18 +487,18 @@ el('btn-promote').onclick = async () => {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ path }),
   });
-  if (r && r.ok) { toast('♻ Рабочая модель обновлена'); el('m-model').textContent = 'fine-tuned'; }
+  if (r && r.ok) { toast('Рабочая модель обновлена', 'power'); el('m-model').textContent = 'fine-tuned'; }
 };
 
 el('btn-export-ncnn').onclick = async () => {
   const path = el('btn-export-ncnn').dataset.path;
   if (!path) return;
-  toast('📦 Пакуем NCNN…');
+  toast('Экспорт NCNN…', 'package');
   const r = await api('/model/export', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ path, format: 'ncnn' }),
   });
-  if (r && r.ok) toast('📦 NCNN готов: ' + r.path);
+  if (r && r.ok) toast('NCNN готов: ' + r.path, 'package');
 };
 
 // ---------- Live-обновление метрик ----------
@@ -518,14 +520,14 @@ async function tick() {
 
     const box = el('status');
     box.classList.remove('offline', 'frozen');
-    let label = '🟢 В эфире';
-    if (d.status !== 'online') { box.classList.add('offline'); label = '🔴 Камеры нет'; }
-    else if (d.mode === 'frozen') { box.classList.add('frozen'); label = '⏸ Кадр замер'; }
-    el('status-text').textContent = label;
+    let label = icon('check') + ' В работе';
+    if (d.status !== 'online') { box.classList.add('offline'); label = icon('camera-off') + ' Камера недоступна'; }
+    else if (d.mode === 'frozen') { box.classList.add('frozen'); label = icon('pause') + ' Пауза'; }
+    el('status-text').innerHTML = label;
     setMode(d.mode === 'frozen');
   } catch (e) {
     el('status').classList.add('offline');
-    el('status-text').textContent = '📡 Связи нет';
+    el('status-text').innerHTML = icon('wifi-off') + ' Нет связи';
   }
 }
 
