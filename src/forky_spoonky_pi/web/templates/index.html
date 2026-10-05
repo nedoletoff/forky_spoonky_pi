@@ -6,16 +6,17 @@
 <title>Forky &amp; Spoonky · Зоркий глаз на Raspberry Pi</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body data-sprite="{{ sprite }}">
+{% set sprite = url_for('static', filename='icons.svg') %}
   <div class="wrap">
     <header>
-      <div class="logo">🎯</div>
+      <div class="logo"><svg class="icon" style="width:24px;height:24px"><use href="{{ sprite }}#i-logo"></use></svg></div>
       <div>
         <h1>Forky &amp; Spoonky</h1>
         <div class="subtitle">
           <span>Нейросеть видит вилки и ложки</span>
-          <span class="chip">🍓 Raspberry Pi 4 · 4 GB</span>
-          <span class="chip blue">📷 USB-камера</span>
+          <span class="chip"><svg class="icon"><use href="{{ sprite }}#i-cpu"></use></svg> Raspberry Pi 4 · 4 GB</span>
+          <span class="chip blue"><svg class="icon"><use href="{{ sprite }}#i-camera"></use></svg> USB-камера</span>
         </div>
       </div>
       <div class="status" id="status">
@@ -60,15 +61,18 @@
         <div class="panel">
           <h2>Что видит камера</h2>
           <div class="stat s-fork">
-            <span class="swatch"></span><span class="name">Вилка</span>
+            <svg class="icon stat-icon"><use href="{{ sprite }}#i-fork"></use></svg>
+            <span class="name">Вилка</span>
             <span class="count" id="c-fork">0</span>
           </div>
           <div class="stat s-spoon">
-            <span class="swatch"></span><span class="name">Ложка</span>
+            <svg class="icon stat-icon"><use href="{{ sprite }}#i-spoon"></use></svg>
+            <span class="name">Ложка</span>
             <span class="count" id="c-spoon">0</span>
           </div>
           <div class="stat s-unknown">
-            <span class="swatch"></span><span class="name">Непонятно</span>
+            <svg class="icon stat-icon"><use href="{{ sprite }}#i-alert"></use></svg>
+            <span class="name">Не определено</span>
             <span class="count" id="c-unknown">0</span>
           </div>
           <div class="divider"></div>
@@ -80,10 +84,10 @@
         <div class="panel">
           <h2>Ручное управление</h2>
           <div class="controls">
-            <button id="btn-snap" class="primary">📸 Поймать кадр</button>
-            <button id="btn-resume" disabled>▶ Вернуть поток</button>
-            <button id="btn-redetect" disabled>🔁 Пересчитать</button>
-            <button id="btn-download">⬇ Сохранить кадр</button>
+            <button id="btn-snap" class="primary"><svg class="icon"><use href="{{ sprite }}#i-aperture"></use></svg> Захватить кадр</button>
+            <button id="btn-resume" disabled><svg class="icon"><use href="{{ sprite }}#i-play"></use></svg> Возобновить поток</button>
+            <button id="btn-redetect" disabled><svg class="icon"><use href="{{ sprite }}#i-refresh"></use></svg> Повторный анализ</button>
+            <button id="btn-download"><svg class="icon"><use href="{{ sprite }}#i-download"></use></svg> Сохранить кадр</button>
           </div>
           <div class="slider-row" style="margin-top:16px;">
             <label>Порог уверенности <b id="thr-val">{{ '%.2f'|format(threshold) }}</b></label>
@@ -95,23 +99,23 @@
 
     <section class="section">
       <div class="section-head">
-        <h2>📸 Кадры в коллекцию</h2>
+        <h2><svg class="icon"><use href="{{ sprite }}#i-camera"></use></svg> Коллекция кадров</h2>
         <span class="count" id="snap-count">0</span>
         <div class="spacer"></div>
-        <button class="tiny" id="btn-zip-clean">⬇ ZIP фото</button>
-        <button class="tiny" id="btn-zip-annotated">⬇ ZIP с метками</button>
-        <button class="tiny" id="btn-reprocess-all">🔁 Пересчитать всё</button>
-        <button class="tiny primary" id="btn-export">📦 Забрать датасет</button>
+        <button class="tiny" id="btn-zip-clean"><svg class="icon"><use href="{{ sprite }}#i-download"></use></svg> ZIP фото</button>
+        <button class="tiny" id="btn-zip-annotated"><svg class="icon"><use href="{{ sprite }}#i-download"></use></svg> ZIP с метками</button>
+        <button class="tiny" id="btn-reprocess-all"><svg class="icon"><use href="{{ sprite }}#i-refresh"></use></svg> Повторный анализ</button>
+        <button class="tiny primary" id="btn-export"><svg class="icon"><use href="{{ sprite }}#i-package"></use></svg> Экспорт датасета</button>
       </div>
       <div class="gallery" id="gallery"></div>
       <div style="text-align:center; padding:24px; color:var(--muted); font-size:13px;" id="gallery-empty">
-        Здесь пусто. Жми «📸 Поймать кадр» — и пополняй датасет.
+        Кадры отсутствуют. Нажмите «Захватить кадр», чтобы добавить запись в датасет.
       </div>
     </section>
 
     <section class="section">
       <details class="train">
-        <summary>🎓 Дообучение модели</summary>
+        <summary><svg class="icon"><use href="{{ sprite }}#i-graduation"></use></svg> Дообучение модели</summary>
 
         {% if not training_enabled %}
         <div class="notice">
@@ -149,11 +153,11 @@
         </div>
 
         <div class="controls" style="margin-top:14px; grid-template-columns:auto auto auto auto 1fr;">
-          <button class="primary" id="btn-train" {% if not training_enabled %}disabled{% endif %}>🚀 Погнали учить</button>
-          <button id="btn-train-stop" disabled>⏹ Стоп</button>
-          <button id="btn-train-log">📜 Показать лог</button>
-          <button id="btn-promote" disabled>♻ Сделать рабочей</button>
-          <button id="btn-export-ncnn" disabled>📦 Экспорт NCNN</button>
+          <button class="primary" id="btn-train" {% if not training_enabled %}disabled{% endif %}><svg class="icon"><use href="{{ sprite }}#i-rocket"></use></svg> Запустить обучение</button>
+          <button id="btn-train-stop" disabled><svg class="icon"><use href="{{ sprite }}#i-square-fill"></use></svg> Остановить</button>
+          <button id="btn-train-log"><svg class="icon"><use href="{{ sprite }}#i-file-text"></use></svg> Показать журнал</button>
+          <button id="btn-promote" disabled><svg class="icon"><use href="{{ sprite }}#i-power"></use></svg> Назначить рабочей</button>
+          <button id="btn-export-ncnn" disabled><svg class="icon"><use href="{{ sprite }}#i-package"></use></svg> Экспорт NCNN</button>
         </div>
 
         <pre class="train-log" id="train-log"></pre>
@@ -175,21 +179,21 @@
   <div class="modal" id="editor-modal" hidden>
     <div class="modal-body">
       <div class="modal-header">
-        <h3>Разметка снимка <span id="editor-id" style="color:var(--muted);font-weight:500;"></span></h3>
-        <button class="close" id="editor-close">✕</button>
+        <h3>Разметка кадра <span id="editor-id" style="color:var(--muted);font-weight:500;"></span></h3>
+        <button class="close" id="editor-close"><svg class="icon"><use href="{{ sprite }}#i-x"></use></svg></button>
       </div>
       <div class="editor-toolbar">
-        <button class="tool active" data-tool="fork">🟩 Вилка</button>
-        <button class="tool" data-tool="spoon">🟦 Ложка</button>
-        <button class="tool" data-tool="delete">🗑 Удалить</button>
-        <span class="hint">Тяни мышью — рисуешь бокс</span>
+        <button class="tool active" data-tool="fork"><svg class="icon"><use href="{{ sprite }}#i-fork"></use></svg> Вилка</button>
+        <button class="tool" data-tool="spoon"><svg class="icon"><use href="{{ sprite }}#i-spoon"></use></svg> Ложка</button>
+        <button class="tool" data-tool="delete"><svg class="icon"><use href="{{ sprite }}#i-trash"></use></svg> Удалить</button>
+        <span class="hint">Протяните мышью, чтобы создать бокс</span>
       </div>
       <div class="editor-canvas-wrap" id="editor-wrap"></div>
       <div class="editor-footer">
-        <button id="editor-auto">🪄 Пусть YOLO разметит</button>
-        <button id="editor-clear">Стереть всё</button>
+        <button id="editor-auto"><svg class="icon"><use href="{{ sprite }}#i-wand"></use></svg> Автоматическая разметка</button>
+        <button id="editor-clear"><svg class="icon"><use href="{{ sprite }}#i-x"></use></svg> Очистить</button>
         <div style="flex:1"></div>
-        <button class="primary" id="editor-save">💾 Сохранить метки</button>
+        <button class="primary" id="editor-save"><svg class="icon"><use href="{{ sprite }}#i-save"></use></svg> Сохранить метки</button>
       </div>
     </div>
   </div>
