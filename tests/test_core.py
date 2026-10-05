@@ -42,6 +42,74 @@ class TestDetectionToLabel:
         assert detection_to_label(self.CLASSES, self._det("knife", [0, 0, 10, 10]), 100, 100) is None
 
 
+# ---------- Источники камеры ----------
+class TestCameraSource:
+    def test_usb_источник_по_умолчанию(self) -> None:
+        from forky_spoonky_pi.camera import UsbCamera, create_source
+        from forky_spoonky_pi.config import CameraConfig
+
+        source = create_source(CameraConfig())
+        assert isinstance(source, UsbCamera)
+
+    def test_csi_источник_выбирается(self) -> None:
+        from forky_spoonky_pi.camera import CsiCamera, create_source
+        from forky_spoonky_pi.config import CameraConfig
+
+        source = create_source(CameraConfig(source="csi"))
+        assert isinstance(source, CsiCamera)
+
+    def test_регистр_и_пробелы_нормализуются(self) -> None:
+        from forky_spoonky_pi.camera import CsiCamera, create_source
+        from forky_spoonky_pi.config import CameraConfig
+
+        assert isinstance(create_source(CameraConfig(source=" CSI ")), CsiCamera)
+
+    def test_неизвестный_источник_ошибка(self) -> None:
+        from forky_spoonky_pi.camera import create_source
+        from forky_spoonky_pi.config import CameraConfig
+
+        with pytest.raises(ValueError):
+            create_source(CameraConfig(source="gstreamer"))
+
+    def test_description_usb_использует_device(self) -> None:
+        from forky_spoonky_pi.config import CameraConfig
+
+        assert CameraConfig(index=2).description() == "2"
+        assert CameraConfig(device="/dev/video1").description() == "/dev/video1"
+
+    def test_description_csi(self) -> None:
+        from forky_spoonky_pi.config import CameraConfig
+
+        assert CameraConfig(source="csi").description() == "csi"
+
+    def test_csi_без_picamera2_не_роняет_открытие(self, monkeypatch) -> None:
+        from forky_spoonky_pi import camera as camera_module
+        from forky_spoonky_pi.config import CameraConfig
+
+        source = camera_module.CsiCamera(CameraConfig(source="csi"))
+        import builtins
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name == "picamera2":
+                raise ImportError("нет picamera2")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        with pytest.raises(RuntimeError):
+            source.open()
+        assert source.is_opened() is False
+
+    def test_worker_open_возвращает_none_при_ошибке(self) -> None:
+        from forky_spoonky_pi.camera import CameraWorker
+        from forky_spoonky_pi.config import AppConfig, CameraConfig
+
+        cfg = AppConfig(camera=CameraConfig(source="gstreamer"))
+        worker = CameraWorker(cfg, detector=None)  # type: ignore[arg-type]
+        assert worker._open() is None
+
+
 # ---------- Trainer._parse_metrics / ETA ----------
 class TestTrainerMetrics:
     CSV_HEADER = (
