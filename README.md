@@ -77,6 +77,54 @@ FORKY_LOGGING__LEVEL=DEBUG
 
 Секреты (если появятся) держим только в `.env` — он в `.gitignore`.
 
+## Камера: USB или CSI
+
+Тип источника задаётся в `config.yaml` → `camera.source`:
+
+| Значение | Что это | Как работает |
+|----------|---------|--------------|
+| `usb`    | USB-вебка или CSI-камера в режиме V4L2 | OpenCV `cv2.VideoCapture` по `camera.index` или `camera.device` |
+| `csi`    | Камера Raspberry Pi (шлейф CSI) через libcamera | `picamera2` |
+
+Параметры:
+
+- `camera.index` — индекс V4L2-устройства (для `source: usb`), по умолчанию `0` → `/dev/video0`.
+- `camera.device` — явный путь, например `/dev/video0`; если задан, имеет приоритет над `index`.
+- `camera.width` / `camera.height` / `camera.fps` — разрешение и частота.
+- `camera.use_v4l2` — использовать backend V4L2 (для `source: usb`).
+
+### USB-камера
+
+```yaml
+camera:
+  source: usb
+  index: 0
+```
+
+Проверь, что устройство видно: `ls /dev/video*`. Пользователю, от которого запущен сервис, нужен доступ к камере — в systemd-юните уже указан `SupplementaryGroups=video`.
+
+### CSI-камера Raspberry Pi
+
+```yaml
+camera:
+  source: csi
+  width: 640
+  height: 480
+```
+
+Порядок настройки на Pi:
+
+1. Включи камеру: `sudo raspi-config` → Interface Options → Camera (или `camera_auto_detect=1` в `/boot/firmware/config.txt`), перезагрузись.
+2. Проверь камеру: `rpicam-hello --list-cameras`.
+3. Установи `picamera2` (идёт из apt, а не из pip):
+   ```bash
+   sudo apt install -y python3-picamera2 libcamera-apps
+   ```
+4. При установке через `deploy/install-pi.sh` поддержка CSI ставится флагом: `sudo WITH_CSI=1 bash deploy/install-pi.sh`. Скрипт создаёт venv с `--system-site-packages`, чтобы `picamera2` из apt был виден.
+5. Перезапусти сервис: `sudo systemctl restart forky_spoonky_pi`.
+
+Если `picamera2` не установлен, приложение не падает: в лог пишется понятная ошибка, а в интерфейсе показывается «Камера недоступна».
+
 ## Дообучение и перенос на Raspberry Pi
 
 Обучение на Pi нецелесообразно (нет GPU). Рекомендуемый цикл:
@@ -105,7 +153,7 @@ FORKY_LOGGING__LEVEL=DEBUG
 sudo bash deploy/install-pi.sh
 ```
 
-Скрипт идемпотентен: ставит системные пакеты (`libgl1`, `libglib2.0-0`, `rsync`, `python3-venv`), синхронизирует код в `/opt/forky_spoonky_pi` (не трогая `data/` и `.env`), создаёт venv,  ставит `requirements-pi.txt`, копирует `.env.example` → `.env`, включает и запускает systemd-сервис.
+Скрипт идемпотентен: ставит системные пакеты (`libgl1`, `libglib2.0-0`, `rsync`, `python3-venv`), синхронизирует код в `/opt/forky_spoonky_pi` (не трогая `data/` и `.env`), создаёт venv, ставит `requirements-pi.txt`, копирует `.env.example` → `.env`, включает и запускает systemd-сервис. Для CSI-камеры добавь `WITH_CSI=1` — скрипт доложит `python3-picamera2` и `libcamera-apps`.
 
 Полезные команды:
 

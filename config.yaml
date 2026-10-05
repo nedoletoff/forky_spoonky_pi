@@ -10,7 +10,13 @@ server:
   port: 8080
 
 camera:
+  # Тип источника: "usb" — обычная USB/V4L2-камера, "csi" — камера Raspberry Pi
+  # (libcamera через picamera2, пакет python3-picamera2).
+  source: usb
+  # Индекс V4L2-устройства (используется для source: usb).
   index: 0
+  # Путь к устройству, например /dev/video0. Если пусто — берётся index.
+  device: ""
   width: 640
   height: 480
   fps: 30

@@ -30,13 +30,23 @@ class ServerConfig:
 
 @dataclass
 class CameraConfig:
+    # Источник камеры: "usb" (V4L2 через OpenCV) или "csi" (Raspberry Pi, picamera2).
+    source: str = "usb"
     index: int = 0
+    # Путь к устройству, например /dev/video0. Если пусто — используется index.
+    device: str = ""
     width: int = 640
     height: int = 480
     fps: int = 30
     use_v4l2: bool = True
     jpeg_quality: int = 80
     reconnect_delay: float = 1.0
+
+    def description(self) -> str:
+        """Человекочитаемое описание источника для логов."""
+        if (self.source or "usb").strip().lower() == "csi":
+            return "csi"
+        return self.device or str(self.index)
 
 
 @dataclass

@@ -41,6 +41,14 @@ apt-get install -y --no-install-recommends \
   python3-venv python3-pip rsync \
   libgl1 libglib2.0-0 libsm6 libxext6 libxrender1
 
+# CSI-камера Raspberry Pi (libcamera) работает через picamera2, который ставится
+# только из apt и доступен Python-процессу при venv с --system-site-packages.
+# Для USB-камеры эти пакеты не нужны, но их наличие не мешает.
+if [[ "${CAMERA_SOURCE:-}" == "csi" ]] || [[ "${WITH_CSI:-0}" == "1" ]]; then
+  log "Ставлю поддержку CSI-камеры (picamera2, libcamera-apps)…"
+  apt-get install -y --no-install-recommends python3-picamera2 libcamera-apps
+fi
+
 # 2. Копируем код (кроме данных, venv и git-мусора).
 log "Синхронизирую файлы проекта в ${APP_DIR}…"
 mkdir -p "${APP_DIR}"
@@ -57,7 +65,9 @@ rsync -a --delete \
 # 3. venv и зависимости (инференс).
 log "Создаю venv и ставлю зависимости…"
 if [[ ! -d "${APP_DIR}/.venv" ]]; then
-  python3 -m venv "${APP_DIR}/.venv"
+  # --system-site-packages нужен, чтобы из venv был виден picamera2 из apt
+  # (для CSI-камеры). USB-камере это не мешает.
+  python3 -m venv --system-site-packages "${APP_DIR}/.venv"
 fi
 "${APP_DIR}/.venv/bin/pip" install --upgrade pip wheel
 # CPU-only torch ОБЯЗАТЕЛЬНО до ultralytics: иначе pip тянет CUDA-колёса на гигабайты,
