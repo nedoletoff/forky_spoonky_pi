@@ -1,0 +1,32 @@
+[Unit]
+Description=Forky Spoonky Pi — детектор вилок и ложек (веб + камера)
+Documentation=file:/opt/forky_spoonky_pi/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/forky_spoonky_pi
+# Переменные окружения (порты, пути, секреты) — из .env, если файл есть.
+EnvironmentFile=-/opt/forky_spoonky_pi/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/opt/forky_spoonky_pi/.venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/opt/forky_spoonky_pi/.venv/bin/python -m forky_spoonky_pi
+Restart=on-failure
+RestartSec=5
+# Логи идут в stdout/stderr и в rotating-файл data/logs/app.log, поэтому
+# journald пишет только то, что успело выйти в поток.
+StandardOutput=journal
+StandardError=journal
+
+# Безопасность: сервису нужен доступ к видеоустройствам.
+SupplementaryGroups=video
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/forky_spoonky_pi/data
+
+[Install]
+WantedBy=multi-user.target

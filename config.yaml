@@ -1,0 +1,56 @@
+# Единый источник истины для настроек приложения.
+# Любое значение можно переопределить переменной окружения вида FORKY_<СЕКЦИЯ>__<КЛЮЧ>
+# (двойное подчёркивание — разделитель уровней), например:
+#   FORKY_SERVER__PORT=9000
+#   FORKY_CAMERA__INDEX=1
+# Секреты держим только в .env (он в .gitignore).
+
+server:
+  host: 0.0.0.0
+  port: 8080
+
+camera:
+  index: 0
+  width: 640
+  height: 480
+  fps: 30
+  use_v4l2: true
+  jpeg_quality: 80
+  # Пауза переподключения камеры, секунды
+  reconnect_delay: 1.0
+
+model:
+  # Можно указать .pt-файл ИЛИ каталог NCNN-модели (например, best_ncnn_model).
+  # Для Raspberry Pi рекомендуется NCNN: экспортируй скриптом scripts/export_ncnn.py.
+  weights: yolo26n.pt
+  imgsz: 416
+  confidence: 0.4
+  # Устройство инференса: cpu / 0 / cuda:0 / mps. На Pi — cpu.
+  device: cpu
+
+classes:
+  # Классы датасета в фиксированном порядке (индекс = cls_id в YOLO-метках).
+  dataset: [fork, spoon]
+  names_ru:
+    0: Вилка
+    1: Ложка
+
+paths:
+  # Все данные складываются в эту папку (snapshots/dataset/runs/logs/weights).
+  data_dir: data
+
+logging:
+  level: INFO
+  max_bytes: 5242880
+  backup_count: 5
+
+training:
+  # На Raspberry Pi обучение отключено — обучаем на ноуте с дискретной GPU.
+  enabled: false
+  epochs: 30
+  imgsz: 416
+  batch: 4
+  workers: 2
+  patience: 20
+  # auto — ultralytics сам выберет CUDA, если доступна; иначе cpu.
+  device: auto

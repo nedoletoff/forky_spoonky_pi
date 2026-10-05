@@ -1,0 +1,6 @@
+# Зависимости для ноутбука с дискретной GPU (дообучение + экспорт NCNN).
+# Требует CUDA-совместимого PyTorch — ставь по инструкции https://pytorch.org
+#   (для CUDA 12.x: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124)
+-r requirements-pi.txt
+torch>=2.5,<3
+torchvision>=0.20,<1

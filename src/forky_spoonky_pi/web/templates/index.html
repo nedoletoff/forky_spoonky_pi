@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Детектор приборов · YOLO на Raspberry Pi</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">🎯</div>
+      <div>
+        <h1>Детектор столовых приборов</h1>
+        <div class="subtitle">
+          <span>YOLO · реальное время</span>
+          <span class="chip">🍓 Raspberry Pi 4 · 4 GB</span>
+          <span class="chip blue">📷 USB-камера</span>
+        </div>
+      </div>
+      <div class="status" id="status">
+        <span class="dot"></span><span id="status-text">Подключение…</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="video-card">
+        <div class="stream-wrapper">
+          <img src="/video_feed" alt="Поток с камеры">
+          <div class="live-tag" id="live-tag">Live</div>
+
+          <!-- Оверлей обучения поверх зоны камеры -->
+          <div class="train-overlay" id="train-overlay" hidden>
+            <div class="train-overlay-inner">
+              <div class="train-title">
+                <span class="spinner"></span>
+                <span id="ov-title">Обучение модели…</span>
+              </div>
+              <div class="train-progress">
+                <div class="train-progress-bar" id="ov-bar"></div>
+              </div>
+              <div class="train-overlay-meta">
+                <div><span>Эпоха</span><b id="ov-epoch">0 / 0</b></div>
+                <div><span>Осталось</span><b id="ov-eta">—</b></div>
+                <div><span>с/эпоху</span><b id="ov-avg">—</b></div>
+              </div>
+              <canvas id="ov-chart" height="150"></canvas>
+              <div class="train-overlay-legend">
+                <span><i style="background:#f59e0b"></i>box_loss</span>
+                <span><i style="background:#ef4444"></i>cls_loss</span>
+                <span><i style="background:#6366f1"></i>mAP50</span>
+              </div>
+              <div class="train-overlay-log" id="ov-log"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="panel">
+          <h2>Статистика кадра</h2>
+          <div class="stat s-fork">
+            <span class="swatch"></span><span class="name">Вилка</span>
+            <span class="count" id="c-fork">0</span>
+          </div>
+          <div class="stat s-spoon">
+            <span class="swatch"></span><span class="name">Ложка</span>
+            <span class="count" id="c-spoon">0</span>
+          </div>
+          <div class="stat s-unknown">
+            <span class="swatch"></span><span class="name">Непонятно</span>
+            <span class="count" id="c-unknown">0</span>
+          </div>
+          <div class="divider"></div>
+          <div class="meta"><span>FPS обработки</span><b id="m-fps">—</b></div>
+          <div class="meta"><span>Инференс</span><b id="m-infer">—</b></div>
+          <div class="meta"><span>Активная модель</span><b id="m-model">{{ model_name }}</b></div>
+        </div>
+
+        <div class="panel">
+          <h2>Управление</h2>
+          <div class="controls">
+            <button id="btn-snap" class="primary">📸 Снимок</button>
+            <button id="btn-resume" disabled>▶ Продолжить</button>
+            <button id="btn-redetect" disabled>🔁 Переобработать</button>
+            <button id="btn-download">⬇ Скачать кадр</button>
+          </div>
+          <div class="slider-row" style="margin-top:16px;">
+            <label>Порог уверенности <b id="thr-val">{{ '%.2f'|format(threshold) }}</b></label>
+            <input type="range" id="thr" min="0.05" max="0.95" step="0.05" value="{{ threshold }}">
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>📸 Снимки</h2>
+        <span class="count" id="snap-count">0</span>
+        <div class="spacer"></div>
+        <button class="tiny" id="btn-zip-clean">⬇ ZIP фото</button>
+        <button class="tiny" id="btn-zip-annotated">⬇ ZIP с метками</button>
+        <button class="tiny" id="btn-reprocess-all">🔁 Прогнать все заново</button>
+        <button class="tiny primary" id="btn-export">📦 Экспорт датасета</button>
+      </div>
+      <div class="gallery" id="gallery"></div>
+      <div style="text-align:center; padding:24px; color:var(--muted); font-size:13px;" id="gallery-empty">
+        Снимков пока нет. Нажмите «📸 Снимок», чтобы сохранить текущий кадр.
+      </div>
+    </section>
+
+    <section class="section">
+      <details class="train">
+        <summary>🎓 Дообучение модели</summary>
+
+        {% if not training_enabled %}
+        <div class="notice">
+          Обучение отключено в <code>config.yaml</code> (<code>training.enabled: false</code>).
+          Обучайте модель на ноутбуке с GPU, экспортируйте в NCNN
+          (<code>scripts/export_ncnn.py</code>) и перенесите артефакт на устройство.
+        </div>
+        {% endif %}
+
+        <div class="train-form">
+          <div class="field">
+            <label>Базовая модель</label>
+            <select id="t-base">
+              <option value="yolo26n.pt">yolo26n.pt (nano)</option>
+              <option value="yolo11n.pt">yolo11n.pt (nano)</option>
+              <option value="yolov8n.pt">yolov8n.pt (nano)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Эпохи</label>
+            <input type="number" id="t-epochs" value="30" min="1" max="500">
+          </div>
+          <div class="field">
+            <label>Размер входа</label>
+            <select id="t-imgsz">
+              <option>320</option>
+              <option selected>416</option>
+              <option>640</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Batch</label>
+            <input type="number" id="t-batch" value="4" min="1" max="64">
+          </div>
+        </div>
+
+        <div class="controls" style="margin-top:14px; grid-template-columns:auto auto auto auto 1fr;">
+          <button class="primary" id="btn-train" {% if not training_enabled %}disabled{% endif %}>🚀 Начать обучение</button>
+          <button id="btn-train-stop" disabled>⏹ Остановить</button>
+          <button id="btn-train-log">📜 Показать лог</button>
+          <button id="btn-promote" disabled>♻ Сделать рабочей</button>
+          <button id="btn-export-ncnn" disabled>📦 Экспорт NCNN</button>
+        </div>
+
+        <pre class="train-log" id="train-log"></pre>
+      </details>
+    </section>
+
+    <footer>
+      Порог <code id="f-thr">{{ '%.2f'|format(threshold) }}</code> ·
+      модель <code>{{ model_name }}</code> ·
+      вход <code>{{ imgsz }}×{{ imgsz }}</code> ·
+      порт <code>:{{ port }}</code><br>
+      Горячие клавиши: <code>Space</code>/<code>S</code> — снимок,
+      <code>R</code>/<code>Esc</code> — продолжить,
+      <code>D</code> — скачать
+    </footer>
+  </div>
+
+  <!-- Модальное окно редактора -->
+  <div class="modal" id="editor-modal" hidden>
+    <div class="modal-body">
+      <div class="modal-header">
+        <h3>Разметка снимка <span id="editor-id" style="color:var(--muted);font-weight:500;"></span></h3>
+        <button class="close" id="editor-close">✕</button>
+      </div>
+      <div class="editor-toolbar">
+        <button class="tool active" data-tool="fork">🟩 Вилка</button>
+        <button class="tool" data-tool="spoon">🟦 Ложка</button>
+        <button class="tool" data-tool="delete">🗑 Удалить</button>
+        <span class="hint">Тяни мышью — новый бокс</span>
+      </div>
+      <div class="editor-canvas-wrap" id="editor-wrap"></div>
+      <div class="editor-footer">
+        <button id="editor-auto">🪄 Прогнать YOLO</button>
+        <button id="editor-clear">Очистить всё</button>
+        <div style="flex:1"></div>
+        <button class="primary" id="editor-save">💾 Сохранить метки</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

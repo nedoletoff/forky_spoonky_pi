@@ -1,0 +1,23 @@
+# Окружение и секреты
+.env
+.venv/
+venv/
+
+# Данные приложения (снимки, датасеты, прогоны, логи, веса)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Модели
+*.pt
+!yolo26n.pt
+!*.pt.keep
+*_ncnn_model/
+
+# ОС
+.DS_Store

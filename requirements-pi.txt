@@ -1,0 +1,8 @@
+# Зависимости для Raspberry Pi (инференс). Обучать на Pi не предполагается.
+# Проверено на Python 3.11–3.13. Для ARM на Pi сборки колёс доступны для всех пакетов.
+flask==3.1.3
+opencv-python-headless==4.12.0.88
+numpy>=2.1,<3
+PyYAML==6.0.3
+python-dotenv==1.2.2
+ultralytics==8.4.173
